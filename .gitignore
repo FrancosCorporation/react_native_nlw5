@@ -11,3 +11,13 @@ web-build/
 
 # macOS
 .DS_Store
+
+# ambiente
+.env
+.env.local
+
+# logs
+*.log
+
+# IDE
+.idea/
