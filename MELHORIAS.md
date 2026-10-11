@@ -1,7 +1,7 @@
 # MELHORIAS — react_native_nlw5
 
-> **Gerado por análise de código em 2026-10-05** · Stack: Expo SDK 41 (2021) + React 16 + TypeScript — app de plantas (NLW5)
-> Branch `main` · API apontando para IP LAN hardcoded · sem testes · sem CI
+> **Diagnóstico inicial de 2026-10-05** · Stack à época: Expo SDK 41 (2021) + React 16 + TypeScript — app de plantas (NLW5)
+> Branch atual `main` · Expo SDK 57 · TEST-01 continua pendente
 >
 > **Este arquivo é um plano de execução.** Cada item tem ID, `arquivo:linha`, mudança exata, critério de aceite e comando de verificação.
 
@@ -12,7 +12,7 @@
 - Atualizados Docker, README, `.env.example` e workflow de CI.
 - `npm run typecheck`, `npm run doctor` (21/21), `npx expo install --check`, exportação web e Docker build passaram. Não foi feita validação em dispositivo iOS/Android.
 - A auditoria npm ainda reporta 27 vulnerabilidades transitivas (19 altas, 8 moderadas); `npm audit fix --force` propõe downgrade para Expo 44, portanto não foi aplicado. `npm audit --omit=dev --audit-level=critical` passa sem alertas críticos.
-- `TEST-01` continua pendente. O workflow foi criado localmente; o push do arquivo de CI depende de autorização OAuth GitHub com escopo `workflow`.
+- `TEST-01` continua pendente. Workflow `7220761c2973ad8be029a326e7b6a7d72645f20f` está publicado e a execução remota passou; a CI ainda não roda testes.
 
 ---
 
@@ -56,7 +56,7 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 | SEC-02 | Expo 41 / RN por tarball — stack EOL | **P1** | `package.json` | — |
 | TEST-01 | Zero testes | **P2** | *(ausente)* | — |
 | BUG-01 | `console.log` de payload + código morto em App.tsx | **P2** | `App.tsx:19,23-31` | — |
-| DEVOPS-02 | Sem CI | **P2** | *(ausente)* `.github/workflows/` | — |
+| DEVOPS-02 | CI sem etapa de testes | **P2** | `.github/workflows/ci.yml` | TEST-01 |
 | DOC-01 | README — IP/backend/setup | **P2** | `README.md` | SEC-01 |
 | IMP-01 | expo-app-loading deprecado | **P3** | `App.tsx:3` | SEC-02 |
 
@@ -151,13 +151,12 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
   grep -n '2>/dev/null\|expo-cli\|0.0.0.0' Dockerfile || echo OK
   ```
 
-### DEVOPS-02 · Sem CI · [P2]
+### DEVOPS-02 · CI sem etapa de testes · [P2]
 
-- **Arquivo:** *(ausente)* `.github/workflows/`
-- **Evidência:** nenhum workflow; `tsconfig` existe mas nada roda `tsc`.
-- **Impacto:** erros de tipo e lock quebrado passam.
-- **Mudança:** workflow: `npx tsc --noEmit` + `npx expo-doctor` + (após `TEST-01`) `npx jest`.
-- **Aceite:** PR com erro de tipo bloqueado.
+- **Arquivo:** `.github/workflows/ci.yml`
+- **Evidência inicial:** a análise de 2026-10-05 não encontrou workflow. O CI atual executa `npm ci`, Expo Doctor, typecheck, exportação web e auditoria de dependências de produção.
+- **Pendente:** adicionar `npx jest` após implementar TEST-01.
+- **Aceite atual:** workflow publicado para `main`; execução `7220761c2973ad8be029a326e7b6a7d72645f20f` passou. Erros de tipos e validações do Expo bloqueiam a CI.
 - **Verificação:**
   ```bash
   npx tsc --noEmit && echo OK
@@ -204,10 +203,10 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 4. **`SEC-02`** — execução da decisão 1 (tarball→registry no mínimo).
 
 ### Wave 3 — Qualidade (P2)
-5. **`BUG-01`** · **`TEST-01`** · **`DEVOPS-02`**.
+5. **`BUG-01`** está concluído; **`TEST-01`** continua pendente e **`DEVOPS-02`** já valida typecheck e Expo. Integrar Jest depende de TEST-01.
 6. **`DOC-01`** · **`IMP-01`** (junto do upgrade).
 
-**Dependências:** `IMP-01` dentro do upgrade (`SEC-02`) · `DOC-01` depois de `SEC-01` (documenta a env nova) · `DEVOPS-02` depois de `TEST-01`.
+**Dependências atuais:** `IMP-01` foi entregue junto com SEC-02; `DOC-01` acompanha SEC-01. Adicionar Jest ao workflow depende de TEST-01.
 
 ---
 
