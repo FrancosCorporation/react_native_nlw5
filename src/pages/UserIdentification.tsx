@@ -1,142 +1,133 @@
-import React from 'react';
+import React, { useState } from 'react'
 import {
-    StyleSheet,
-    SafeAreaView,
-    View,
-    Text,
-    TextInput,
-    KeyboardAvoidingView,
-    Platform,
-    Alert
-} from 'react-native';
-import colors from '../styles/colors';
-import fonts from '../styles/fonts';
-import { Button } from '../components/Button';
-import { Dimensions } from 'react-native';
-import { useState } from 'react';
-import AsynStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/core';
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Button } from '../components/Button'
+import colors from '../styles/colors'
+import fonts from '../styles/fonts'
+import type { RootStackParamList } from '../routes/types'
 
-const Header = '😎';
-const titlleButton = 'Confirme';
-const titlle = 'Me conta \n seu nome?';
+const USER_STORAGE_KEY = '@react_native_nlw5:user'
+
 export function UserIdentification() {
-    const navigation = useNavigation();
-    const [isFocused, setIsFocused] = useState(false);
-    const [isFilled, setIsFilled] = useState(false);
-    const [name, setName] = useState<string>('');
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+  const [name, setName] = useState('')
+  const [focused, setFocused] = useState(false)
 
-
-    function handleImputBlur() {
-        setIsFocused(false);
-        setIsFilled(!!name)
-    }
-    function handleImputFocus() {
-        setIsFocused(true);
-    }
-    function handleImputChange(value: string) {
-        setIsFilled(!!value);
-        setName(value);
-    }
-    async function setNameUser() {
-        try {
-            if(name!=''){
-                await AsynStorage.setItem('@react_native_nlw5:user', name);
-                navigation.navigate('Confirmed',{
-                    title:"Prontinho \n"+name,
-                    icon:'hub',
-                    subtitle:"Então agora vamos começar a cadastrar as plantinhas",
-                    titleButton:'Mãos a obra'
-                });
-            }
-            else Alert.alert('Vamos la! Quero saber seu nome..')
-            
-        } catch {
-            Alert.alert('Não foi Possivel salvar o seu Nome.')
-        }
+  async function saveName() {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      Alert.alert('Como podemos chamar você?', 'Digite seu nome para continuar.')
+      return
     }
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                <View style={styles.content}>
-                    <View style={styles.form}>
-                        <Text style={styles.emoji}>
-                            {isFilled ? Header : Header}
-                        </Text>
-                        <Text style={styles.tittle}>
-                            {titlle}
-                        </Text>
-                        <TextInput
-                            placeholder='Digite seu nome'
-                            style={[
-                                styles.input,
-                                (isFocused || isFilled) &&
-                                { borderColor: colors.green }
-                            ]}
-                            onBlur={handleImputBlur}
-                            onFocus={handleImputFocus}
-                            onChangeText={handleImputChange} />
-                        <Button
-                            titleButton={titlleButton}
-                            style={styles.button}           
-                            onPress={() => setNameUser()}
-                        />
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    )
+    try {
+      await AsyncStorage.setItem(USER_STORAGE_KEY, trimmedName)
+      navigation.navigate('Confirmed', {
+        title: `Prazer, ${trimmedName}!`,
+        icon: 'hub',
+        subtitle: 'Vamos preparar um cantinho mais verde para você.',
+        titleButton: 'Escolher plantas',
+      })
+    } catch {
+      Alert.alert('Não foi possível salvar seu nome', 'Tente novamente em instantes.')
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.content}>
+          <Text style={styles.emoji} accessibilityLabel="planta em vaso">🌿</Text>
+          <Text style={styles.title}>Como podemos chamar você?</Text>
+          <Text style={styles.subtitle}>Seu nome deixa os lembretes mais pessoais.</Text>
+          <TextInput
+            accessibilityLabel="Seu nome"
+            autoCapitalize="words"
+            autoComplete="name"
+            maxLength={40}
+            onBlur={() => setFocused(false)}
+            onChangeText={setName}
+            onFocus={() => setFocused(true)}
+            onSubmitEditing={() => void saveName()}
+            placeholder="Digite seu nome"
+            placeholderTextColor={colors.body_light}
+            returnKeyType="done"
+            style={[styles.input, focused && styles.inputFocused]}
+            value={name}
+          />
+          <Button titleButton="Continuar" onPress={() => void saveName()} style={styles.button} />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  )
 }
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'space-around'
-    },
-    content: {
-        flex: 1,
-        width: '100%'
-    },
-    form: {
-        flex: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 54,
-        alignItems: 'center'
-    },
-    emoji: {
-        fontSize: 44
-    },
-    input: {
-        borderBottomWidth: 1,
-        borderColor: colors.gray,
-        color: colors.heading,
-        width: '100%',
-        fontSize: 18,
-        marginTop: 50,
-        padding: 10,
-        textAlign: 'center'
-    },
-    tittle: {
-        fontSize: 24,
-        lineHeight: 32,
-        textAlign: 'center',
-        color: colors.heading,
-        fontFamily: fonts.heading,
-        marginTop: 20
-    },
-    button: {
-        backgroundColor: colors.green,
-        justifyContent: 'center',
-        alignItems: 'center',
-        alignSelf: 'center',
-        marginTop: 25,
-        fontFamily: fonts.heading,
-        borderRadius: 16,
-        marginBottom: 10,
-        width: Dimensions.get('window').width * 0.7,
-        height: Dimensions.get('window').width * 0.15,
-        paddingHorizontal: 10
-    }
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  keyboard: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emoji: {
+    fontSize: 52,
+    marginBottom: 20,
+  },
+  title: {
+    color: colors.heading,
+    fontFamily: fonts.heading,
+    fontSize: 25,
+    lineHeight: 33,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: colors.body_dark,
+    fontFamily: fonts.text,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  input: {
+    width: '100%',
+    minHeight: 56,
+    marginTop: 34,
+    borderBottomWidth: 1,
+    borderColor: colors.gray,
+    color: colors.heading,
+    fontFamily: fonts.text,
+    fontSize: 18,
+    paddingHorizontal: 12,
+    textAlign: 'center',
+  },
+  inputFocused: {
+    borderColor: colors.green,
+    borderBottomWidth: 2,
+  },
+  button: {
+    width: Math.min(Dimensions.get('window').width - 64, 360),
+    marginTop: 28,
+  },
 })

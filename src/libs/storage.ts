@@ -1,149 +1,167 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { format } from "date-fns";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { format } from 'date-fns'
 import * as Notifications from 'expo-notifications'
-import Constants from 'expo-constants';
-import { Alert, Platform } from "react-native";
+import { Alert, Platform } from 'react-native'
 
 export interface PlantsProps {
-    id: string;
-    name: string;
-    about: string;
-    water_tips: string;
-    photo: string;
-    environments: [string];
-    frequency: {
-        times: number;
-        repeat_every: string;
-    };
-    dateTimeNotification: Date;
-    hour: string;
+  id: string | number
+  name: string
+  about: string
+  water_tips: string
+  photo: string
+  environments: string[]
+  frequency: {
+    times: number
+    repeat_every: 'day' | 'week'
+  }
+  dateTimeNotification?: Date | string
+  hour?: string
 }
 
-export interface StoragePlantProps {
-    [id: string]: {
-        data: PlantsProps;
-        notificationId: string;
-    }
+export type SavedPlantProps = PlantsProps & {
+  dateTimeNotification: Date | string
 }
 
-export async function savePlant(plant: PlantsProps): Promise<void> {
-    try {
-        registerForPushNotificationsAsync();
-        const nexTime = new Date(plant.dateTimeNotification);
-        const now = new Date();
-        const { times, repeat_every } = plant.frequency;
+interface StoragePlantProps {
+  data: SavedPlantProps
+  notificationIds?: string[]
+  notificationId?: string
+}
 
+export interface StorageProps {
+  [id: string]: StoragePlantProps
+}
 
-        if (repeat_every === 'week') {
-            const interval = Math.trunc(7 / times);
-            nexTime.setDate(now.getDate() + interval);
-        }
-        /* else 
-            nexTime.setDate(nexTime.getDate() + 1); */
+const PLANTS_STORAGE_KEY = '@react_native_nlw5:plant'
 
-        const seconds = Math.abs(Math.ceil(now.getTime() - nexTime.getTime()) / 1000);
+function getWeeklyDays(plant: SavedPlantProps): number[] {
+  const count = Math.max(1, Math.min(7, Math.trunc(plant.frequency.times)))
+  const selectedDay = new Date(plant.dateTimeNotification).getDay()
+  const now = new Date()
+  const selectedTime = new Date(plant.dateTimeNotification)
+  const startsTomorrow =
+    selectedDay === now.getDay() &&
+    (selectedTime.getHours() < now.getHours() ||
+      (selectedTime.getHours() === now.getHours() && selectedTime.getMinutes() <= now.getMinutes()))
+  const firstDay = (selectedDay + (startsTomorrow ? 1 : 0)) % 7
+
+  return Array.from({ length: count }, (_, index) => (firstDay + Math.floor((7 * index) / count)) % 7)
+}
+
+export function getNextWateringDate(plant: SavedPlantProps, now = new Date()): Date {
+  const selectedTime = new Date(plant.dateTimeNotification)
+  const hour = selectedTime.getHours()
+  const minute = selectedTime.getMinutes()
+
+  if (plant.frequency.repeat_every === 'day') {
+    const next = new Date(now)
+    next.setHours(hour, minute, 0, 0)
+    if (next <= now) next.setDate(next.getDate() + 1)
+    return next
+  }
+
+  return getWeeklyDays(plant)
+    .map((weekday) => {
+      const next = new Date(now)
+      const daysUntil = (weekday - now.getDay() + 7) % 7
+      next.setDate(now.getDate() + daysUntil)
+      next.setHours(hour, minute, 0, 0)
+      if (next <= now) next.setDate(next.getDate() + 7)
+      return next
+    })
+    .sort((first, second) => first.getTime() - second.getTime())[0]
+}
+
+async function requestNotificationPermission(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Lembretes de rega',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      vibrationPattern: [0, 250, 250, 250],
+    })
+  }
+
+  const currentPermission = await Notifications.getPermissionsAsync()
+  if (currentPermission.granted) return true
+
+  const requestedPermission = await Notifications.requestPermissionsAsync()
+  if (requestedPermission.granted) return true
+
+  Alert.alert(
+    'Lembretes desativados',
+    'A planta será salva, mas o aplicativo não poderá avisar quando chegar a hora de regar.',
+  )
+  return false
+}
+
+function getNotificationTriggers(plant: SavedPlantProps): Notifications.SchedulableNotificationTriggerInput[] {
+  const selectedTime = new Date(plant.dateTimeNotification)
+  const time = {
+    hour: selectedTime.getHours(),
+    minute: selectedTime.getMinutes(),
+  }
+
+  if (plant.frequency.repeat_every === 'day') {
+    return [{ type: Notifications.SchedulableTriggerInputTypes.DAILY, ...time }]
+  }
+
+  return getWeeklyDays(plant).map((weekday) => ({
+    type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+    weekday: weekday + 1,
+    ...time,
+  }))
+}
+
+export async function savePlant(plant: SavedPlantProps): Promise<void> {
+  const notificationIds: string[] = []
+  const canNotify = await requestNotificationPermission()
+
+  try {
+    if (canNotify) {
+      const triggers = getNotificationTriggers(plant)
+      for (const trigger of triggers) {
         const notificationId = await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Heeyyyy, 🎁',
-                body: 'Esta na hora de Regar essa tal de: !! ' + plant.name,
-                sound: true,
-                priority: Notifications.AndroidNotificationPriority.HIGH,
-                data: {
-                    plant
-                },
-            },
-            trigger: {
-                seconds: seconds < 60 ? 60 : seconds,
-                repeats: true
-            }
-        });
-        console.log(seconds)
-        const data = await AsyncStorage.getItem('@react_native_nlw5:plant');
-        const oldPlants = data ? (JSON.parse(data) as StoragePlantProps) : {};
-        const newPlant = {
-            [plant.id]: {
-                data: plant,
-                notificationId
-            }
-        }
-        await AsyncStorage.setItem('@react_native_nlw5:plant',
-            JSON.stringify({
-                ...newPlant,
-                ...oldPlants
-            }));
-    } catch (error: any) {
-        throw new Error(error);
-
+          content: {
+            title: 'Hora de cuidar da sua planta 🌱',
+            body: `Regue ${plant.name} no horário combinado.`,
+            data: { plantId: plant.id },
+          },
+          trigger,
+        })
+        notificationIds.push(notificationId)
+      }
     }
-}
-export async function loadPlant(): Promise<PlantsProps[]> {
-    try {
-        const data = await AsyncStorage.getItem('@react_native_nlw5:plant');
-        const plants = data ? (JSON.parse(data) as StoragePlantProps) : {};
 
-        const plantsSorted = Object
-            .keys(plants)
-            .map((plant) => {
-                return {
-                    ...plants[plant].data,
-                    hour: format(new Date(plants[plant].data.dateTimeNotification), 'HH:mm',)
-                }
-            })
-            .sort((a, b) => Math.floor(new Date(a.dateTimeNotification).getTime() / 1000 -
-                Math.floor(new Date(b.dateTimeNotification).getTime() / 1000)))
-        return plantsSorted;
-    } catch (error: any) {
-        throw new Error(error);
-
-    }
+    const stored = await AsyncStorage.getItem(PLANTS_STORAGE_KEY)
+    const plants = stored ? (JSON.parse(stored) as StorageProps) : {}
+    plants[String(plant.id)] = { data: plant, notificationIds }
+    await AsyncStorage.setItem(PLANTS_STORAGE_KEY, JSON.stringify(plants))
+  } catch (error) {
+    await Promise.all(notificationIds.map((id) => Notifications.cancelScheduledNotificationAsync(id)))
+    throw error instanceof Error ? error : new Error('Não foi possível salvar a planta.')
+  }
 }
 
-export async function removePlant(id: string): Promise<void> {
-    const data = await AsyncStorage.getItem('@react_native_nlw5:plant');
-    const plants = data ? (JSON.parse(data) as StoragePlantProps) : {};
+export async function loadPlant(): Promise<SavedPlantProps[]> {
+  const stored = await AsyncStorage.getItem(PLANTS_STORAGE_KEY)
+  const plants = stored ? (JSON.parse(stored) as StorageProps) : {}
 
-    await Notifications.cancelScheduledNotificationAsync(plants[id].notificationId);
-
-    delete plants[id];
-    await AsyncStorage.setItem('@react_native_nlw5:plant', JSON.stringify(plants))
-
+  return Object.values(plants)
+    .map(({ data }) => ({
+      ...data,
+      hour: format(new Date(data.dateTimeNotification), 'HH:mm'),
+    }))
+    .sort((first, second) => getNextWateringDate(first).getTime() - getNextWateringDate(second).getTime())
 }
 
-async function registerForPushNotificationsAsync() {
-    try {
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowAlert: true,
-                shouldPlaySound: false,
-                shouldSetBadge: false,
-            }),
-        });
+export async function removePlant(id: string | number): Promise<void> {
+  const stored = await AsyncStorage.getItem(PLANTS_STORAGE_KEY)
+  const plants = stored ? (JSON.parse(stored) as StorageProps) : {}
+  const plant = plants[String(id)]
+  if (!plant) return
 
-        if (Constants.isDevice) {
-            const { status: existingStatus } = await Notifications.getPermissionsAsync();
-            let finalStatus = existingStatus;
-            if (existingStatus !== 'granted') {
-                const { status } = await Notifications.requestPermissionsAsync();
-                finalStatus = status;
-            }
-            if (finalStatus !== 'granted') {
-                alert('Verifique nas configurações, suas notificações estão desligadas !');
-                return;
-            }
-        } else {
-            alert('Must use physical device for Push Notifications');
-        }
-
-        if (Platform.OS === 'android') {
-            Notifications.setNotificationChannelAsync('default', {
-                name: 'default',
-                importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
-                lightColor: '#FF231F7C',
-            });
-        }
-    }
-    catch (error) {
-        console.log('error')
-    }
+  const notificationIds = plant.notificationIds ?? (plant.notificationId ? [plant.notificationId] : [])
+  await Promise.all(notificationIds.map((notificationId) => Notifications.cancelScheduledNotificationAsync(notificationId)))
+  delete plants[String(id)]
+  await AsyncStorage.setItem(PLANTS_STORAGE_KEY, JSON.stringify(plants))
 }

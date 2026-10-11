@@ -5,6 +5,15 @@
 >
 > **Este arquivo é um plano de execução.** Cada item tem ID, `arquivo:linha`, mudança exata, critério de aceite e comando de verificação.
 
+## Registro de implementação — 2026-10-11
+
+- Migrado do Expo SDK 41 para SDK 57, React Native 0.86 e React 19; removidos o tarball do RN e as ferramentas antigas de CLI.
+- Corrigidos URL configurável da API, configuração de permissões, inicialização/splash, notificações, navegação e estados de erro/vazio/paginação das telas.
+- Atualizados Docker, README, `.env.example` e workflow de CI.
+- `npm run typecheck`, `npm run doctor` (21/21), `npx expo install --check`, exportação web e Docker build passaram. Não foi feita validação em dispositivo iOS/Android.
+- A auditoria npm ainda reporta 27 vulnerabilidades transitivas (19 altas, 8 moderadas); `npm audit fix --force` propõe downgrade para Expo 44, portanto não foi aplicado. `npm audit --omit=dev --audit-level=critical` passa sem alertas críticos.
+- `TEST-01` continua pendente. O workflow foi criado localmente; o push do arquivo de CI depende de autorização OAuth GitHub com escopo `workflow`.
+
 ---
 
 ## 0. Como usar este documento
@@ -86,6 +95,13 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
   grep -n 'sdk-41.0.0.tar.gz' package.json || echo "sem tarball"
   npx expo-doctor 2>&1 | tail -5
   ```
+
+### SEC-03 · Permissões nativas não utilizadas · [P2]
+
+- **Arquivo:** `app.json`
+- **Mudança:** removidas permissões de câmera/localização e modos de background sem uso no aplicativo.
+- **Aceite:** configuração nativa não solicita acesso que o fluxo do app não utiliza.
+- **Verificação:** `npx expo-doctor`.
 
 ---
 
@@ -199,30 +215,31 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 
 | Item | Decisão | Motivo |
 |---|---|---|
-| Upgrade Expo 41→latest de uma vez | **Não de uma vez** | Saltos de SDK acumulam breaking changes — seguir caminho incremental com `expo install --fix` a cada salto. |
+| Upgrade Expo 41→57 | **Executado** | Alinhado com `expo install --fix`; Expo Doctor 21/21, exportação web e Docker build passaram. Falta validar notificações e comportamento nativo em dispositivo iOS/Android. |
 | Apontar `baseURL` para produção já | **Não sem TLS** | Exigir `https://` fora de `__DEV__`. |
 | Manter tarball do GitHub do RN | **Não** | Sem checksum de registry, sem audit. |
 | Reescrever em outro framework (Flutter etc.) | **Não** | Projeto de estudo — escopo é corrigir, não reescrever. |
 
-**Riscos:** upgrade de 6+ SDKs pode quebrar notificações/fontes — ter device físico ou Expo Go compatível para teste; sem dispositivo, congelar (caminho B) é mais honesto que upgrade cego.
+**Riscos e pendências:** notificações e comportamento nativo precisam de validação em dispositivo iOS/Android. A auditoria encontrou 27 alertas transitivos (19 altos, 8 moderados); a correção forçada do npm propõe Expo 44 e foi recusada para preservar o SDK atual. TEST-01 segue pendente.
 
 ---
 
 ## 10. Definição de pronto (DoD)
 
 **Segurança**
-- [ ] `SEC-01` — zero IP hardcoded; base via env
-- [ ] `SEC-02` — decisão executada (upgrade ou freeze documentado; sem tarball)
+- [x] `SEC-01` — zero IP hardcoded; base via env
+- [x] `SEC-02` — upgrade executado e tarball removido
+- [x] `SEC-03` — permissões não utilizadas removidas
 
 **Infra/bugs**
-- [ ] `DEVOPS-01` — `npm ci` sem suppressão; sem `expo-cli` global
-- [ ] `BUG-01` — sem `console.log` de payload; sem código morto
+- [x] `DEVOPS-01` — `npm ci` sem suppressão; sem `expo-cli` global
+- [x] `BUG-01` — sem `console.log` de payload; sem código morto
 
 **Qualidade/doc**
 - [ ] `TEST-01` — ≥ 1 teste
-- [ ] `DEVOPS-02` — CI com `tsc --noEmit`
-- [ ] `DOC-01` — README + `.env.example`
-- [ ] `IMP-01` — sem `expo-app-loading`
+- [x] `DEVOPS-02` — CI com typecheck e validações do Expo
+- [x] `DOC-01` — README + `.env.example`
+- [x] `IMP-01` — sem `expo-app-loading`
 
 **Validação final:**
 ```bash

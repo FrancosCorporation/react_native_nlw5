@@ -8,13 +8,14 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
+/dist/
 
 # macOS
 .DS_Store
 
 # ambiente
-.env
-.env.local
+.env*
+!.env.example
 
 # logs
 *.log

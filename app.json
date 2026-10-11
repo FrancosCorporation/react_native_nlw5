@@ -1,55 +1,39 @@
 {
   "expo": {
-    "name": "React_Native_Nlw5",
-    "slug": "React_Native_Nlw5",
+    "name": "Plant Manager",
+    "slug": "plant-manager-nlw5",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "plugins": [
-        "expo-notifications",
+    "plugins": [
+      "expo-notifications",
+      "expo-font",
+      [
+        "expo-splash-screen",
         {
-          "icon": "./local/path/to/myNotificationIcon.png",
-          "color": "#ffffff",
-          "sounds": [
-            "./local/path/to/mySound.wav",
-            "./local/path/to/myOtherSound.wav"
-          ],
-          "mode": "production"
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "imageWidth": 200
         }
-      ]
-    }
-  },
-  "updates": {
-    "fallbackToCacheTimeout": 0
-  },
-  "assetBundlePatterns": [
-    "**/*"
-  ],
-  "ios": {
-    "supportsTablet": true,
-    "infoPlist": {
-      "UIBackgroundModes": [
-        "location",
-        "fetch"
-      ]
-    }
-  },
-  "android": {
-    "adaptiveIcon": {
-      "foregroundImage": "./assets/adaptive-icon.png",
-      "backgroundColor": "#FFFFFF"
+      ],
+      "expo-status-bar",
+      "@react-native-community/datetimepicker"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
     },
-    "permissions": [
-      "CAMERA",
-      "ACCESS_FINE_LOCATION",
-      "ACCESS_BACKGROUND_LOCATION"
-    ]
-  },
-  "web": {
-    "favicon": "./assets/favicon.png"
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }
