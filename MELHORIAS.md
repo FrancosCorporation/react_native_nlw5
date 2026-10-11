@@ -12,8 +12,9 @@
 - Atualizados Docker, README, `.env.example` e workflow de CI.
 - `npm run typecheck`, `npm run doctor` (21/21), `npx expo install --check`, exportação web e Docker build passaram. Não foi feita validação em dispositivo iOS/Android.
 - A auditoria npm ainda reporta 27 vulnerabilidades transitivas (19 altas, 8 moderadas); `npm audit fix --force` propõe downgrade para Expo 44, portanto não foi aplicado. `npm audit --omit=dev --audit-level=critical` passa sem alertas críticos.
+- O push atual notificou 3 alertas do Dependabot no ramo padrão (2 altos, 1 moderado); manter a distinção entre os alertas do GitHub e a auditoria do lockfile local.
 - `TEST-01` continua pendente. Workflow `7220761c2973ad8be029a326e7b6a7d72645f20f` está publicado e a execução remota passou; a CI ainda não roda testes.
-- **DEVOPS-03 concluído:** CI usa actions v7 (runtime Node 24) e runner `ubuntu-24.04`; execução remota `38185952722` passou.
+- **DEVOPS-03 concluído:** CI usa actions v7 (runtime Node 24) e runner `ubuntu-24.04`; execução `38185952722` passou no workflow atualizado.
 
 ---
 
