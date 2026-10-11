@@ -13,6 +13,7 @@
 - `npm run typecheck`, `npm run doctor` (21/21), `npx expo install --check`, exportação web e Docker build passaram. Não foi feita validação em dispositivo iOS/Android.
 - A auditoria npm ainda reporta 27 vulnerabilidades transitivas (19 altas, 8 moderadas); `npm audit fix --force` propõe downgrade para Expo 44, portanto não foi aplicado. `npm audit --omit=dev --audit-level=critical` passa sem alertas críticos.
 - `TEST-01` continua pendente. Workflow `7220761c2973ad8be029a326e7b6a7d72645f20f` está publicado e a execução remota passou; a CI ainda não roda testes.
+- **DEVOPS-03 em andamento:** CI atualizada para actions v7 (runtime Node 24) e runner `ubuntu-24.04`; aguarda execução remota.
 
 ---
 
@@ -57,6 +58,7 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 | TEST-01 | Zero testes | **P2** | *(ausente)* | — |
 | BUG-01 | `console.log` de payload + código morto em App.tsx | **P2** | `App.tsx:19,23-31` | — |
 | DEVOPS-02 | CI sem etapa de testes | **P2** | `.github/workflows/ci.yml` | TEST-01 |
+| DEVOPS-03 | Runtime Node 20 nas actions e runner `ubuntu-latest` variável | **P2** | `.github/workflows/ci.yml` | — |
 | DOC-01 | README — IP/backend/setup | **P2** | `README.md` | SEC-01 |
 | IMP-01 | expo-app-loading deprecado | **P3** | `App.tsx:3` | SEC-02 |
 
@@ -162,6 +164,14 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
   npx tsc --noEmit && echo OK
   ```
 
+### DEVOPS-03 · Atualizar runtime das actions e fixar runner · [P2]
+
+- **Arquivo:** `.github/workflows/ci.yml`
+- **Evidência:** o workflow usava `actions/checkout@v4`, `actions/setup-node@v4` e `runs-on: ubuntu-latest`. As duas actions foram atualizadas para `v7`; seus metadados declaram runtime `node24`. O runner foi fixado em `ubuntu-24.04` para evitar migração automática para uma imagem futura.
+- **Mudança:** executada; aguarda CI pós-alteração.
+- **Aceite:** Expo Doctor, typecheck, export web e auditoria de dependências de produção passam com as versões atuais; sem etapa de testes enquanto TEST-01 estiver pendente.
+- **Verificação:** parse do YAML e CI remota após a mudança.
+
 ---
 
 ## 7. Documentação
@@ -237,6 +247,7 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 **Qualidade/doc**
 - [ ] `TEST-01` — ≥ 1 teste
 - [x] `DEVOPS-02` — CI com typecheck e validações do Expo
+- [ ] `DEVOPS-03` — actions v7/Node 24 e runner Ubuntu 24.04; aguardando CI
 - [x] `DOC-01` — README + `.env.example`
 - [x] `IMP-01` — sem `expo-app-loading`
 
