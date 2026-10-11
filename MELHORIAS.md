@@ -13,7 +13,7 @@
 - `npm run typecheck`, `npm run doctor` (21/21), `npx expo install --check`, exportação web e Docker build passaram. Não foi feita validação em dispositivo iOS/Android.
 - A auditoria npm ainda reporta 27 vulnerabilidades transitivas (19 altas, 8 moderadas); `npm audit fix --force` propõe downgrade para Expo 44, portanto não foi aplicado. `npm audit --omit=dev --audit-level=critical` passa sem alertas críticos.
 - `TEST-01` continua pendente. Workflow `7220761c2973ad8be029a326e7b6a7d72645f20f` está publicado e a execução remota passou; a CI ainda não roda testes.
-- **DEVOPS-03 em andamento:** CI atualizada para actions v7 (runtime Node 24) e runner `ubuntu-24.04`; aguarda execução remota.
+- **DEVOPS-03 concluído:** CI usa actions v7 (runtime Node 24) e runner `ubuntu-24.04`; execução remota `38185952722` passou.
 
 ---
 
@@ -168,7 +168,7 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 
 - **Arquivo:** `.github/workflows/ci.yml`
 - **Evidência:** o workflow usava `actions/checkout@v4`, `actions/setup-node@v4` e `runs-on: ubuntu-latest`. As duas actions foram atualizadas para `v7`; seus metadados declaram runtime `node24`. O runner foi fixado em `ubuntu-24.04` para evitar migração automática para uma imagem futura.
-- **Mudança:** executada; aguarda CI pós-alteração.
+- **Mudança:** executada; CI `38185952722` passou em Expo Doctor, typecheck, export web e auditoria de dependências críticas de produção.
 - **Aceite:** Expo Doctor, typecheck, export web e auditoria de dependências de produção passam com as versões atuais; sem etapa de testes enquanto TEST-01 estiver pendente.
 - **Verificação:** parse do YAML e CI remota após a mudança.
 
@@ -247,7 +247,7 @@ App mobile (Expo) de plantas: rotas stack/tabs, notificações locais (`expo-not
 **Qualidade/doc**
 - [ ] `TEST-01` — ≥ 1 teste
 - [x] `DEVOPS-02` — CI com typecheck e validações do Expo
-- [ ] `DEVOPS-03` — actions v7/Node 24 e runner Ubuntu 24.04; aguardando CI
+- [x] `DEVOPS-03` — actions v7/Node 24 e runner Ubuntu 24.04; CI `38185952722` verde
 - [x] `DOC-01` — README + `.env.example`
 - [x] `IMP-01` — sem `expo-app-loading`
 
