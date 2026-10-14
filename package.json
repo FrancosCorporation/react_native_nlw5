@@ -45,5 +45,8 @@
     "@types/react": "~19.2.3",
     "expo-doctor": "^1.20.4",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
