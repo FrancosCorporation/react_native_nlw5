@@ -4,7 +4,7 @@ Aplicativo de estudo para organizar plantas da casa e receber lembretes locais d
 
 ## Requisitos
 
-- Node.js 22.13 ou superior;
+- Node.js 22.13 ou superior e npm 11 ou superior (necessário para o alias de segurança);
 - Android Studio/emulador, iOS Simulator ou um aparelho com Expo Go compatível;
 - o servidor do catálogo em execução durante o desenvolvimento.
 
@@ -52,6 +52,7 @@ Use as ferramentas locais para validar a configuração e os tipos:
 ```bash
 npm run doctor
 npm run typecheck
+npm run test:security
 ```
 
 Os lembretes locais pedem permissão quando você adiciona a primeira planta. A agenda da planta usa a frequência recomendada pelo catálogo e pode ser cancelada ao removê-la.
